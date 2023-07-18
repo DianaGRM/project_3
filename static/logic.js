@@ -153,65 +153,180 @@ d3.json(url).then(d=>{
 
 
     
-     // Function to update the bubble chart based on selected filters
-    function updateBubbleChart() {
-    const selectedType = document.getElementById("selDataset").value;
-    const selectedGenre = document.getElementById("selDataset2").value;
-    const selectedCountry = document.getElementById("selDataset3").value;
-    // Filter the data based on selected filters
-    let filteredData = d;
-    if (selectedType !== "") {
-      filteredData = filteredData.filter(item => item.type === selectedType);
-    }
-    if (selectedGenre !== "") {
-      filteredData = filteredData.filter(item => item.genres.includes(selectedGenre));
-    }
-    if (selectedCountry !== "") {
-      filteredData = filteredData.filter(item => item.production_countries.includes(selectedCountry));
-    }
-    // Extract required data for the bubble chart
-    const chartData = filteredData.map(item => ({
-      x: item.title, // Set titles as x-axis
-      y: item.Score, // Set Score as y-axis
-      text: item.title, // Set titles as text labels
-      size: item.Score, // Set Score as bubble size
-      color: item.Score // Set Score as color
-    }));
-    // Sort the data by Score in descending order
-    chartData.sort((a, b) => b.Score - a.Score);
-    // Take only the top x scores
-    const topScores = chartData.slice(0, 20);
-    // Sort the data by titles (x) in ascending order
-    topScores.sort((a, b) => a.x.localeCompare(b.x));
-    // Create the bubble chart trace
-    let bubbleTrace = {
-      x: topScores.map(item => item.x),
-      y: topScores.map(item => item.y),
-      text: topScores.map(item => item.text),
-      mode: "markers",
-      marker: {
-        size: topScores.map(item => item.size*10),
-        color: topScores.map(item => item.color),
-        colorscale: "Viridis"
-      }
-    };
-    // Create the bubble chart data array
-    let bubbleData = [bubbleTrace];
-    // Set up layout for the bubble chart
-    let bubbleLayout = {
-      title: "Top 20 Titles",
-      xaxis: { title: "Titles" },
-      yaxis: { title: "Score" }
-    };
-    // Plot the bubble chart
-    Plotly.newPlot("bubble", bubbleData, bubbleLayout);
+// Function to update the bubble chart based on selected filters
+function updateBubbleChart() {
+  const selectedType = document.getElementById("selDataset").value;
+  const selectedGenre = document.getElementById("selDataset2").value;
+  const selectedCountry = document.getElementById("selDataset3").value;
+  // Filter the data based on selected filters
+  let filteredData = d;
+  if (selectedType !== "") {
+    filteredData = filteredData.filter(item => item.type === selectedType);
   }
-  // Attach event listeners to the filters
-  document.getElementById("selDataset").addEventListener("change", updateBubbleChart);
-  document.getElementById("selDataset2").addEventListener("change", updateBubbleChart);
-  document.getElementById("selDataset3").addEventListener("change", updateBubbleChart);
-  // Initial update of the bubble chart
+  if (selectedGenre !== "") {
+    filteredData = filteredData.filter(item => item.genres.includes(selectedGenre));
+  }
+  if (selectedCountry !== "") {
+    filteredData = filteredData.filter(item => item.production_countries.includes(selectedCountry));
+  }
+  // Extract required data for the bubble chart
+  const chartData = filteredData.map(item => ({
+    x: item.title, // Set titles as x-axis
+    y: item.Score, // Set Score as y-axis
+    text: item.title, // Set titles as text labels
+    size: item.Score, // Set Score as bubble size
+    color: item.Score // Set Score as color
+  }));
+  // Sort the data by Score in descending order
+  chartData.sort((a, b) => b.Score - a.Score);
+  // Take only the top x scores
+  const topScores = chartData.slice(0, 20);
+  // Sort the data by titles (x) in ascending order
+  topScores.sort((a, b) => a.x.localeCompare(b.x));
+  // Create the bubble chart trace
+  let bubbleTrace = {
+    x: topScores.map(item => item.x),
+    y: topScores.map(item => item.y),
+    text: topScores.map(item => item.text),
+    mode: "markers",
+    marker: {
+      size: topScores.map(item => item.size*10),
+      color: topScores.map(item => item.color),
+      colorscale: "Viridis"
+    }
+  };
+  // Create the bubble chart data array
+  let bubbleData = [bubbleTrace];
+  // Set up layout for the bubble chart
+  let bubbleLayout = {
+    title: "Top 20 Titles",
+    xaxis: { title: "Titles" },
+    yaxis: { title: "Score" }
+  };
+  // Plot the bubble chart
+  Plotly.newPlot("bubble", bubbleData, bubbleLayout);
+}
+
+// Function to update the bar chart based on selected filters
+function updateBarChart() {
+  const selectedGenre = document.getElementById("selDataset2").value;
+  const selectedType = document.getElementById("selDataset").value;
+  const selectedCountry = document.getElementById("selDataset3").value;
+
+  // Filter the data based on selected genre, type, and country
+  let filteredData = d;
+  if (selectedGenre !== "") {
+    filteredData = filteredData.filter(item => item.genres.includes(selectedGenre));
+  }
+  if (selectedType !== "") {
+    filteredData = filteredData.filter(item => item.type === selectedType);
+  }
+  if (selectedCountry !== "") {
+    filteredData = filteredData.filter(item => item.production_countries.includes(selectedCountry));
+  }
+
+  // Calculate the number of titles and average scores per year
+  const dataByYear = filteredData.reduce((acc, item) => {
+    const year = item.release_year;
+    if (!acc[year]) {
+      acc[year] = {
+        count: 0,
+        totalScore: 0
+      };
+    }
+    acc[year].count++;
+    acc[year].totalScore += item.Score;
+    return acc;
+  }, {});
+
+  // Calculate the average scores per year
+  const averageScores = {};
+  Object.keys(dataByYear).forEach(year => {
+    const { count, totalScore } = dataByYear[year];
+    averageScores[year] = totalScore / count;
+  });
+
+  // Extract data for the bar chart
+  const chartData = {
+    labels: Object.keys(dataByYear),
+    datasets: [{
+      label: "Number of Titles",
+      data: Object.values(dataByYear).map(data => data.count),
+      backgroundColor: "rgba(75, 192, 192, 0.5)", // Customize the bar color
+      borderColor: "rgba(75, 192, 192, 1)", // Customize the bar border color
+      borderWidth: 1
+    }, {
+      label: "Average Score",
+      data: Object.values(averageScores),
+      backgroundColor: "rgba(192, 75, 192, 0.5)", // Customize the bar color
+      borderColor: "rgba(192, 75, 192, 1)", // Customize the bar border color
+      borderWidth: 1,
+      borderRadius: 8,
+      borderSkipped: false
+    }]
+  };
+
+  // Set up layout options for the bar chart
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: "Year"
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Number of Titles / Average Score"
+        },
+        ticks: {
+          beginAtZero: true
+        }
+      }
+    }
+  };
+
+  // Get the canvas element for the bar chart
+  const barCanvas = document.getElementById("barChart");
+
+  // Check if a chart already exists
+  const existingChart = Chart.getChart(barCanvas);
+  if (existingChart) {
+    existingChart.destroy(); // Destroy the existing chart if it exists
+  }
+
+  // Create the bar chart using Chart.js
+  new Chart(barCanvas, {
+    type: "bar",
+    data: chartData,
+    options: chartOptions
+  });
+}
+
+// Attach event listeners to the filters
+document.getElementById("selDataset").addEventListener("change", () => {
   updateBubbleChart();
+  updateBarChart();
+});
+document.getElementById("selDataset2").addEventListener("change", () => {
+  updateBubbleChart();
+  updateBarChart();
+});
+document.getElementById("selDataset3").addEventListener("change", () => {
+  updateBubbleChart();
+  updateBarChart();
+});
+
+// Initial update of the bubble and bar charts
+updateBubbleChart();
+updateBarChart();
+
+
+
+
 
 
   //marker 
@@ -234,7 +349,7 @@ markers.clearLayers();
       let countryData = data.features[0];
       let coordinates = countryData.geometry.coordinates;
 
-      map.setView(coordinates.reverse(), 5);
+      map.setView(coordinates.reverse(), 2);
       markers.addLayer(L.marker(coordinates));
       
       

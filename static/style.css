@@ -2,3 +2,9 @@
     height: 300px;
     width: 900px;
   }
+
+  .netflix-logo {
+    width: 200px;
+    height: auto;
+    margin-bottom: 20px;
+  }
